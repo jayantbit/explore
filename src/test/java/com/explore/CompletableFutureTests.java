@@ -64,6 +64,7 @@ public class CompletableFutureTests {
           System.out.println("This thenRun ladder can continue");
         });
 
+
     System.out.println("Came Here... Non blocking call");
 
     sleep(4000);
@@ -85,7 +86,10 @@ public class CompletableFutureTests {
   @Test
   public void test3() throws Exception
   {
-    int x= create(2000).getNow(-1);   //if future value is present use it,otherwise take default value
+
+    CompletableFuture<Integer> future = create(2000);
+
+    int x= future.getNow(-1);   //if future value is present use it,otherwise take default value
     System.out.println(x);
     assertEquals(x,-1);
     //should print default value
@@ -246,4 +250,38 @@ public class CompletableFutureTests {
         assertTrue(future.isCompletedExceptionally());
 
   }
+
+
+  public CompletableFuture<Integer> createNum(int number)
+  {
+    return CompletableFuture.supplyAsync(()->number);
+  }
+
+  @Test
+  public void testThenCombine()
+  {
+     createNum(2)
+         .thenCombine(createNum(3),(result1,result2)-> result1+result2)
+         .thenAccept(data-> System.out.println(data));
+
+
+  }
+
+  public CompletableFuture<Integer>  inc(int number)
+  {
+    return CompletableFuture.supplyAsync(()->number+1);
+  }
+
+  @Test
+  public void testThenCompose()
+  {
+    createNum(2)
+        .thenApply(data-> inc(data) )   //this returns a completableFuture
+        .thenAccept(data-> System.out.println(data));
+
+    createNum(2)
+        .thenCompose(data-> inc(data) )   //this returns a completableFuture
+        .thenAccept(data-> System.out.println(data));
+
+    }
 }

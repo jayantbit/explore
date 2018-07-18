@@ -1,5 +1,5 @@
 # explore
-Repository for my java explorations..
+Repository for  java explorations..
 Java 9
 Lambdas & Streams
 RxJava
