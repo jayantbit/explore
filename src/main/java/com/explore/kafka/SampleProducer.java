@@ -2,6 +2,7 @@ package com.explore.kafka;
 
 import java.util.*;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.kafka.clients.producer.*;
 
@@ -18,38 +19,33 @@ public class SampleProducer {
       props.put("key.serializer","org.apache.kafka.common.serialization.StringSerializer");
       props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-      Producer<String, String> producer = new KafkaProducer <>(props);
 
+      Producer<String, String> producer = new KafkaProducer <>(props);
+     ProducerCallback callback = new ProducerCallback();
 
     long startTime = System.currentTimeMillis();
 
-    ProducerCallback callback = new ProducerCallback();
-
-      IntStream.range(0,1000)
-          .forEach( x->
+   Stream.iterate(0,i->i+1)
+    .forEach( x->
           {
-              String data= String.valueOf(x);
+            String data= String.valueOf(x);
 
             System.out.println("Sending " + data);
-
-              ProducerRecord <String, String > record = new ProducerRecord<>(topicName, String.valueOf(x%2), data);
-
-
+            ProducerRecord <String, String > record = new ProducerRecord<>(topicName, null, data);
 
             try {
               producer.send(record,callback);
-              //Thread.sleep(500);
+              Thread.sleep(500);
             } catch (Exception e) {
               e.printStackTrace();
             }
           });
 
-      long endTime =System.currentTimeMillis();
+
+     long endTime =System.currentTimeMillis();
      System.out.println("Time taken "+ (endTime -startTime));
 
-      System.out.println("Producer call completed");
-
-      producer.close();
+     producer.close();
 
    }
 

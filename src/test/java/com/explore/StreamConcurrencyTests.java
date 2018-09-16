@@ -1,7 +1,18 @@
 package com.explore;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.junit.Test;
 
+import java.io.FileReader;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -137,6 +148,21 @@ public class StreamConcurrencyTests {
       //its decided by where terminal operation is executed.
 
 
-
   }
+
+
+
+
+
+  @Test
+  public void test() throws Exception
+  {
+
+    SimpleDateFormat f = new SimpleDateFormat("yyyy.MM.dd");
+    f.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+    System.out.println(f.format(new Date()));
+  }
+
+
 }

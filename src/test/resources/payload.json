@@ -1,0 +1,37 @@
+{
+  "query": {
+    "bool": {
+      "must": [{
+        "query_string": {
+          "analyze_wildcard": false,
+          "query": "\"search-event-log\" AND \"total:0\" NOT \"brand_uri:*\" AND \"pageNumber:0\"  NOT \"price_range:*\" NOT \"category_tag:*\" NOT \"-featured-\" NOT \"promotion_id:*\" NOT \"toggle_on_sale:*\" NOT \"sub_vendor_id:*\""
+        }
+      }, {
+        "range": {
+          "@timestamp": {
+            "gte": "now-15m",
+            "lte": "now",
+            "format": "epoch_millis"
+          }
+        }
+      }],
+      "must_not": []
+    }
+  },
+  "size": 0,
+  "_source": {
+    "excludes": []
+  },
+  "aggs": {
+    "2": {
+      "terms": {
+        "field": "q.raw",
+        "exclude": "\"\"",
+        "size": 1000,
+        "order": {
+          "_count": "desc"
+        }
+      }
+    }
+  }
+}
