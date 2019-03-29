@@ -17,13 +17,15 @@ public class ConcurrencyTest {
 
   //to prove that AtomicInteger is thread safe can handle concurrent update operations
 
+
+
   @Test
   public void test1()  throws Exception {
 
     AtomicInteger ac= new AtomicInteger(0);
 
     ForkJoinPool fp = new ForkJoinPool(2);
-    List<Integer> list=  new CopyOnWriteArrayList<>(); // a concurrent list
+    List<Integer> list= new CopyOnWriteArrayList<>(); // a concurrent list
 
 
 
@@ -49,6 +51,7 @@ public class ConcurrencyTest {
       pre=x;
     }
 
+    System.out.println("Size" + list.size());
     //it will print 1 to some number N , in order and with no repitation
     // 1 2 3 4 5 6....
     }
