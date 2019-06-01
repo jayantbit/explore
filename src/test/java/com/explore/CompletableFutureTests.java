@@ -3,21 +3,20 @@ package com.explore;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import lombok.SneakyThrows;
+
 public class CompletableFutureTests {
 
   //Unit Tests to demonstrate working of CompletableFuture
+   //https://www.baeldung.com/java-completablefuture
 
  public int compute(int sleepms)
  {
@@ -44,7 +43,7 @@ public class CompletableFutureTests {
   }
 
 
-  void  sleep(long ms)
+  private void  sleep(long ms)
   {
     try {
       Thread.sleep(ms);
@@ -289,6 +288,140 @@ public class CompletableFutureTests {
     createNum(2)
         .thenCompose(data-> inc(data) )   //this returns a completableFuture
         .thenAccept(data-> System.out.println(data));
+    }
+
+
+    private  CompletableFuture getFuture1()
+    {
+       CompletableFuture<String> future = new CompletableFuture<>();
+
+       Executors.newCachedThreadPool().submit(()->
+       {
+          sleep(500);
+          future.complete("Hello");
+       });
+
+       return future;
+
+    }
+
+   private  CompletableFuture getFuture2()
+   {
+      CompletableFuture<String> future = CompletableFuture.supplyAsync(()->
+      {
+         sleep(500);
+         return "World";
+      });
+
+      return future;
+
+   }
+
+
+
+
+    private String emit(String val,long delay)
+    {
+       sleep(delay);
+       return val;
+    }
+
+
+    @Test
+    @SneakyThrows
+   public void thenAccept()
+    {
+       CompletableFuture<String> completableFuture
+        = CompletableFuture.supplyAsync(() -> "Hello");
+
+       CompletableFuture<Void> future = completableFuture
+        .thenApply(s-> s+" world") //then apply is like map
+        .thenAccept(s -> System.out.println("Computation returned: " + s)) //then accept will consume the value
+        .thenRun(() -> System.out.println("Flow completed"));
+
+
+       future.get(); //this wil give void
+    }
+
+
+    @Test
+    @SneakyThrows
+   public void thenCompose()
+    {
+
+       long start=System.currentTimeMillis();
+
+       CompletableFuture.supplyAsync(() ->  emit("Hello",500))
+        .thenCompose(s -> CompletableFuture.supplyAsync(() -> emit(s+ " World",500)))
+         .thenAccept(System.out::println);
+
+
+       sleep(1000);   //then compose will be sequential..will wait for prev future to finish
+       //for parallel exec..and if futures are independent use thenCombine
+       System.out.println("Time taken " +  (System.currentTimeMillis() -start));  //1sec
+    }
+
+   @Test
+   public void thenCombine()
+   {
+      long start=System.currentTimeMillis();
+      CompletableFuture<String> future = getFuture1();
+
+      future
+       .thenCombine(getFuture2(),(a,b)-> (a+" "+b))
+       .thenAccept(System.out::println); //registering call back
+
+      //above statements were non blocking
+
+      System.out.println("control came here");
+
+      sleep(500); //wating for future to finish..giving value less than 500 will not pring "hello world"
+      System.out.println("Time taken " +  (System.currentTimeMillis() -start));  //587ms
+   }
+
+
+   private void logTime(long start)
+   {
+      System.out.println("Time taken " +  (System.currentTimeMillis() -start));
+   }
+
+    @Test
+   public void thenAcceptBoth()
+    {
+       CompletableFuture future = CompletableFuture.supplyAsync(() -> "Hello")
+        .thenAcceptBoth(CompletableFuture.supplyAsync(() -> " World"),
+         (s1, s2) -> System.out.println(s1 + s2));
+
+       //similar to thenCombine.. only diff that this will return CompletableFuture<Void>
+
+       //thenApply and thenCompose is analogues to map and flatMap of stream world
+    }
+
+    @Test
+   public void joinFutures()
+    {
+       long start=System.currentTimeMillis();
+
+       CompletableFuture<String> future1
+        = CompletableFuture.supplyAsync(() -> emit("Hello",500));
+       CompletableFuture<String> future2
+        = CompletableFuture.supplyAsync(() -> emit("Beautiful",500));
+       CompletableFuture<String> future3
+        = CompletableFuture.supplyAsync(() ->  emit("World",500));
+
+
+       String ans=Stream.of(future1, future2, future3)
+        .map(CompletableFuture::join)  //will wait for all to complete
+        .collect(Collectors.joining(" "));
+
+       //CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(future1, future2, future3);
+       //allOf will return void
+
+       System.out.println(ans);
+
+
+
+       logTime(start); //500ms
     }
 
 
