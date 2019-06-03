@@ -2,21 +2,28 @@ package com.explore;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import lombok.SneakyThrows;
 
 public class CompletableFutureTests {
 
-  //Unit Tests to demonstrate working of CompletableFuture
+  //Unit Tests to learn CompletableFuture
    //https://www.baeldung.com/java-completablefuture
+   //https://dzone.com/articles/20-examples-of-using-javas-completablefuture
 
  public int compute(int sleepms)
  {
@@ -323,6 +330,7 @@ public class CompletableFutureTests {
     private String emit(String val,long delay)
     {
        sleep(delay);
+      // assertTrue(Thread.currentThread().isDaemon());
        return val;
     }
 
@@ -367,7 +375,7 @@ public class CompletableFutureTests {
       long start=System.currentTimeMillis();
       CompletableFuture<String> future = getFuture1();
 
-      future
+     CompletableFuture<Void> cf= future
        .thenCombine(getFuture2(),(a,b)-> (a+" "+b))
        .thenAccept(System.out::println); //registering call back
 
@@ -376,6 +384,8 @@ public class CompletableFutureTests {
       System.out.println("control came here");
 
       sleep(500); //wating for future to finish..giving value less than 500 will not pring "hello world"
+      //cf.join();   //instead of sleep(500) u can use cf.join
+
       System.out.println("Time taken " +  (System.currentTimeMillis() -start));  //587ms
    }
 
@@ -423,6 +433,139 @@ public class CompletableFutureTests {
 
        logTime(start); //500ms
     }
+
+
+
+    @Test
+    public void completeExceptionaly()
+    {
+       CompletableFuture<String> cf = CompletableFuture.completedFuture("message").thenApplyAsync(s-> emit(s.toUpperCase(),100));
+       CompletableFuture<String> exceptionHandler = cf.handle((s, th) -> { return (th != null) ? "message upon cancel" : ""; });
+       cf.completeExceptionally(new RuntimeException("completed exceptionally"));
+       assertTrue("Was not completed exceptionally", cf.isCompletedExceptionally());
+       try {
+          cf.join();
+          fail("Should have thrown an exception");
+       } catch(CompletionException ex) { // just for testing
+          assertEquals("completed exceptionally", ex.getCause().getMessage());
+       }
+       assertEquals("message upon cancel", exceptionHandler.join());
+    }
+
+    @Test
+   public void thenAcceptAsync()
+    {
+       StringBuilder result = new StringBuilder();
+       CompletableFuture<Void> cf = CompletableFuture.completedFuture("thenAcceptAsync message")
+        .thenAcceptAsync(s -> result.append(s));
+       cf.join();
+       assertTrue("Result was empty", result.length() > 0);
+    }
+
+    @Test
+   public void exceptionaly()
+    {
+       CompletableFuture<String> cf = CompletableFuture.completedFuture("message").thenApplyAsync(s-> emit(s.toUpperCase(),100));
+       CompletableFuture<String> cf2 = cf.exceptionally(throwable -> "canceled message");
+       assertTrue("Was not canceled", cf.cancel(true));
+       assertTrue("Was not completed exceptionally", cf.isCompletedExceptionally());
+       assertEquals("canceled message", cf2.join());
+
+       //More functions
+       /*
+        applyEither
+        acceptEither
+
+        */
+    }
+
+    @Test
+    public void moreTests()
+    {
+       String original = "Message";
+       StringBuilder result = new StringBuilder();
+       CompletableFuture.completedFuture(original).thenApply(String::toUpperCase).runAfterBoth(
+        CompletableFuture.completedFuture(original).thenApply(String::toLowerCase),
+        () -> result.append("done"));
+
+       assertTrue("Result was empty", result.length() > 0);
+
+      result.setLength(0);
+
+       CompletableFuture.completedFuture(original).thenApply(String::toUpperCase).thenAcceptBoth(
+        CompletableFuture.completedFuture(original).thenApply(String::toLowerCase),
+        (s1, s2) -> result.append(s1 + s2));
+       assertEquals("MESSAGEmessage", result.toString());
+    }
+
+
+    @Test
+   public void anyOneCompletes()
+    {
+       long start=System.currentTimeMillis();
+       StringBuilder result = new StringBuilder();
+       List<String> messages = Arrays.asList("a", "b", "c");
+
+       Random random = new Random();
+       List<CompletableFuture<String>> futures = messages.stream()
+        .map(msg -> CompletableFuture.completedFuture(msg).thenApplyAsync(s -> emit(s,100+random.nextInt(200))))
+        .collect(Collectors.toList());
+
+       CompletableFuture cf= CompletableFuture.anyOf(futures.toArray(new CompletableFuture[futures.size()]))
+        .whenComplete((res, th) -> {
+           if (th == null) {
+              assertTrue(((String) res) != null);
+              result.append(res);
+           } else {
+              System.out.println(th);
+           }
+       });
+
+       cf.join();
+
+       System.out.println(result.toString());
+       assertTrue("Result was empty", result.length() > 0);
+       logTime(start);
+    }
+
+
+   @Test
+   public void allCompletes()
+   {
+      long start=System.currentTimeMillis();
+      StringBuilder result = new StringBuilder();
+      List<String> messages = IntStream.range(0,11)
+                                        .map(i-> i+97)
+                                        .mapToObj(i-> (char)i)
+                                        .map(ch -> ch.toString())
+                                        .collect(Collectors.toList());
+
+
+      System.out.println("ForkJoin Parallelism " +ForkJoinPool.getCommonPoolParallelism());
+      //this pool is used by Completable future by default
+
+      ForkJoinPool pool=new ForkJoinPool(5);
+
+      List<CompletableFuture<String>> futures = messages.stream()
+       .map(msg -> CompletableFuture.completedFuture(msg).thenApplyAsync(s -> emit(s,100),pool))
+       .collect(Collectors.toList());
+
+      CompletableFuture cf= CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]))
+       .whenComplete((res, th) -> {
+          if (th == null) {
+            futures.forEach(future->result.append(future.getNow(null)));
+          } else {
+             System.out.println(th);
+          }
+       });
+
+      cf.join();
+
+
+      System.out.println(result.toString());
+      assertTrue("Result was empty", result.length() > 0);
+      logTime(start);
+   }
 
 
 
