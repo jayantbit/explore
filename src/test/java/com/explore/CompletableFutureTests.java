@@ -24,6 +24,7 @@ public class CompletableFutureTests {
   //Unit Tests to learn CompletableFuture
    //https://www.baeldung.com/java-completablefuture
    //https://dzone.com/articles/20-examples-of-using-javas-completablefuture
+   //https://dzone.com/articles/java-8-definitive-guide?fromrel=true
 
  public int compute(int sleepms)
  {
