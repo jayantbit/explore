@@ -4,6 +4,9 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+
+import java.util.Objects;
+
 import org.junit.Test;
 
 public class AutoValueTest {
@@ -36,13 +39,21 @@ public class AutoValueTest {
                      .numberOfLegs(4)
                     .build();
 
+
      Animal2 dog2= Animal2.builder()
       .name("dog")
       .numberOfLegs(4)
       .build();
 
+
+
      assertFalse(dog2==dog);
      assertTrue(dog2.equals(dog));
 
+     int code1=Objects.hash("dog",4);
+      int code2=dog.hashCode();
+     System.out.println(code1 +" "+code2);
   }
+
+
 }
