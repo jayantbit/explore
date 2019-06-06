@@ -1,5 +1,6 @@
 package com.explore;
 
+import lombok.SneakyThrows;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -17,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import lombok.SneakyThrows;
+
 
 public class CompletableFutureTests {
 

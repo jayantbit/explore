@@ -7,6 +7,7 @@ import static org.junit.Assert.assertFalse;
 
 import java.util.Objects;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class AutoValueTest {
