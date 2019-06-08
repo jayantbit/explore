@@ -180,7 +180,7 @@ public class RxTest {
 
 
 
-   void  sleep(long ms)
+   static void  sleep(long ms)
    {
       try {
          Thread.sleep(ms);

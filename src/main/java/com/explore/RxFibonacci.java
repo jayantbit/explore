@@ -10,7 +10,7 @@ public class RxFibonacci {
 
       return Observable.create(subscriber-> {
 
-         System.out.println("here");
+         System.out.println("calculating Fibo");
          int a=0;
          int b=1;
          int c;
@@ -23,6 +23,7 @@ public class RxFibonacci {
             subscriber.onNext(c);
             a=b;
             b=c;
+            Thread.sleep(1000);
          }
 
          subscriber.onComplete();
